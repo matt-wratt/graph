@@ -6,23 +6,18 @@ const defaultRunOptions = {
 }
 
 export default ([nodes, edges], { log, step } = defaultRunOptions) => {
-  const nextTick = f => setTimeout(f, 0)
-  const map = a => b => (Object.keys(b).map((k, i) => b[k] = a(k, b[k], i)), b)
-
-  const nodeEdges = node => {
-    return edges.reduce((edges, edge) => {
-      const [{ node: a }, { node: b, port }] = edge
-      return a === node || b === node ? [edge].concat(edges) : edges
-    }, [])
+  const map = a => b => {
+    Object.keys(b).map((k, i) => b[k] = a(k, b[k], i))
+    return b
   }
 
   const isUpStream = node => edge => {
-    const [{ node: a }, _] = edge
+    const [{ node: a }] = edge
     return node === a
   }
 
   const isDownStream = node => edge => {
-    const [_, { node: b }] = edge
+    const { node: b } = edge[1]
     return node === b
   }
 
@@ -68,7 +63,9 @@ export default ([nodes, edges], { log, step } = defaultRunOptions) => {
 
   let graph = [nodes, edges]
   let iteration = startingNodes
-  while ([graph, iteration] = iterate(graph, iteration), iteration.length) { }
+  while (iteration.length) {
+    [graph, iteration] = iterate(graph, iteration)
+  }
 
   return graph
 }

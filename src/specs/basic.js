@@ -28,12 +28,15 @@ const makeSpec = () => {
 
     const add = {
       inputs: { a: Number, b: Number },
-      implementation: ({ }, { a = 0, b = 0 }) => Number(a) + Number(b),
+      implementation: (_, { a = 0, b = 0 }) => Number(a) + Number(b),
     }
 
     const tap = {
       inputs: { a: undefined },
-      implementation: ({ }, { a }) => (console.log('tap', a), a),
+      implementation: (_, { a }) => {
+        console.log('tap', a)
+        return a
+      }
     }
 
     const defaultValue = {
@@ -44,20 +47,23 @@ const makeSpec = () => {
 
     const either = {
       inputs: { condition: Boolean, left: undefined, right: undefined },
-      implementation: ({ }, { condition, left, right }) => condition ? left : right,
+      implementation: (_, { condition, left, right }) => condition ? left : right,
     }
 
     const greater = {
       inputs: { a: Number, b: Number },
-      implementation: ({ }, { a, b }) => a > b,
+      implementation: (_, { a, b }) => a > b,
     }
 
     const not = {
       inputs: { a: Boolean },
-      implementation: ({ }, { a }) => !a,
+      implementation: (_, { a }) => !a,
     }
 
-    const map = a => b => (Object.keys(b).map((k, i) => b[k] = a(k, b[k], i)), b)
+    const map = a => b => {
+      Object.keys(b).map((k, i) => b[k] = a(k, b[k], i))
+      return b
+    }
 
     const make = map((name, spec) => (state = {}) => {
       console.log(name)

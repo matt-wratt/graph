@@ -1,7 +1,6 @@
 
 export default ([nodes, edges]) => {
   edges = edges.reduce((text, [{ node: aIndex }, { node: bIndex, port }]) => {
-    const a = nodes[aIndex]
     const b = nodes[bIndex]
     const extra = b.name !== 'tap' ? '' : ([
       ' ',
