@@ -42,6 +42,20 @@ const graph = ({ value, add, tap, defaultValue, either, greater, not }) => {
   return [nodes, edges]
 }
 
+const keys = Object.keys.bind(Object)
+
+const dedupe = a => {
+  return a.reduce((b, c) => {
+    return b.indexOf(c) !== -1 ? b : [...b, c]
+  }, [])
+}
+
+const flatten = a => {
+  return a.reduce((b, c) => {
+    return Array.isArray(c) ? [...b, ...c] : [...b, c]
+  }, [])
+}
+
 const spec = (() => {
 
   const defaultNode = {
@@ -141,7 +155,7 @@ const run = ([nodes, edges], { log } = defaultRunOptions) => {
       a.out = a.implementation(a.state, a.inputs)
       b.inputs[port] = a.out
       b.out = b.implementation(b.state, b.inputs)
-      log(a.toString(), '->', b.toString())
+      log({from: a.toString(), _: '->', to: b.toString() })
       nodes = Object.assign({}, nodes, { [aIndex]: a, [bIndex]: b })
       return nodes
     }, nodes),
@@ -183,13 +197,6 @@ const runReactive = ([nodes, edges], { log, step } = defaultRunOptions) => {
       down: getAll(isUpStream(k))(edges),
       value: undefined,
     }
-  }
-
-  const keys = Object.keys.bind(Object)
-  const dedupe = a => {
-    return a.reduce((b, c) => {
-      return b.indexOf(c) !== -1 ? b : b.concat([c])
-    }, [])
   }
 
   nodes = map(node)(nodes)
@@ -262,10 +269,25 @@ const Node = ({ x = 50, y = 50, name = 'Node' }) =>
 const edge = nodes => ([{ node: aIndex }, { node: bIndex, port }]) =>
   <div className="edge">Edge {aIndex} {bIndex} {port}</div>
 
+const Json = ({ value }) => <pre>{ typeof value === "string" ? value : JSON.stringify(value) }</pre>
+
 const Output = ({ processor, graph, flat = true }) => {
   const output = []
-  processor(graph, { log: (...args) => output.push(args.map(x => JSON.stringify(x, null, flat ? '' : '  ')).join(' ')) })
-  return <pre>{output.join('\n')}</pre>
+  processor(graph, { log: (...args) => output.push(args) })
+  const rows = flatten(output)
+  const columns = dedupe(rows.reduce((cols, row) => [...cols, ...keys(row)], []))
+  debugger
+  return (
+    <table>
+      <thead>
+        { columns.map(col => <th>{col}</th>) }
+      </thead>
+      <tbody>
+        { rows.map(row => <tr>{ columns.map(col => <td><Json value={row[col]} /></td>) }</tr>) }
+      </tbody>
+    </table>
+  )
+  return <pre>{rows.join('\n')}</pre>
 }
 
 export default class App extends Component {
@@ -282,8 +304,6 @@ export default class App extends Component {
   componentDidMount () {
     d3.select('#graph')
       .graphviz().renderDot(dot(runReactive(graph(spec))))
-    // d3.select('#graph')
-    //   .selectAll('text').attr('font-family', 'verdana').attr('font-size', '8pt')
   }
 
   render () {
