@@ -25,8 +25,11 @@ export default class Graph extends Component {
   }
 
   componentDidMount () {
-    d3.select(this.selector)
-      .graphviz().renderDot(this.graphDescription())
+    try {
+      d3.select(this.selector).graphviz().renderDot(this.graphDescription())
+    } catch (err) {
+      console.error('Graph Component: ', err)
+    }
   }
 
   render () {
