@@ -27,8 +27,33 @@ const edgeDefaults = {
   style: 'solid',
 }
 
-export default ([nodes, edges]) => {
+const defaultOptions = {
+  color: "black",
+  highlight: [],
+  highlightColor: "red",
+}
+
+export default ([nodes, edges], options) => {
+  options = Object.assign({}, defaultOptions, options)
+
   nodes = keys(nodes).map(propFrom(nodes))
+
+  const nodeAttr = (node) => {
+    let color = options.color
+    if (options.highlight.indexOf(node) !== -1) color = options.highlightColor
+    return {
+      color: color,
+      fontcolor: color,
+    }
+  }
+
+  const edgeAttr = (a, b) => {
+    let color = options.color
+    if (options.highlight.indexOf(a) !== -1) color = options.highlightColor
+    return {
+      color: color
+    }
+  }
 
   const tapFilter =
     pipe(prop('name'), eq('tap'))
@@ -54,8 +79,8 @@ export default ([nodes, edges]) => {
   const buildSubset = (graph, nodes, edges, { nodeMap, edgeMap, nodeAttrs = {}, edgeAttrs = {} }) => {
     graph = build(graph, '', `edge [${joinProps({ ...edgeDefaults, ...edgeAttrs })}]`)
     graph = build(graph, `node [${joinProps({ ...nodeDefaults, ...nodeAttrs })}]`)
-    graph = build(graph, ...nodes.map(nodeMap).map(([index, attrs]) => `node [${joinProps(attrs)}] ${index};`))
-    graph = build(graph, ...edges.map(edgeMap).map(([a, b, attrs]) => `${a} -> ${b} [${joinProps(attrs)}]`))
+    graph = build(graph, ...nodes.map(nodeMap).map(([index, attrs]) => `node [${joinProps({ ...attrs, ...nodeAttr(index) })}] ${index};`))
+    graph = build(graph, ...edges.map(edgeMap).map(([a, b, attrs]) => `${a} -> ${b} [${joinProps({ ...attrs, ...edgeAttr(a, b) })}]`))
     return graph
   }
 

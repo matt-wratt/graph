@@ -17,22 +17,33 @@ export default class Graph extends Component {
 
   constructor (props) {
     super(props)
+    this.state = { graph: [{}, []] }
     this.id = ++id
   }
 
-  graphDescription () {
-    return dot(this.props.graph)
+  componentDidMount () {
+    this.props.graph.subscribe((graph, iteration) => this.setState({ graph: graph, activeNodes: iteration }))
   }
 
-  componentDidMount () {
+  graphDescription () {
+    return dot(this.state.graph, { highlight: this.state.activeNodes, highlightColor: "green2" })
+  }
+
+
+
+  renderGraph = () => {
     try {
-      d3.select(this.selector).graphviz().renderDot(this.graphDescription())
+      this.graphviz = this.graphviz || d3.select(this.selector).graphviz()
+      this.graphviz
+        .dot(this.graphDescription())
+        .render()
     } catch (err) {
       console.error('Graph Component: ', err)
     }
   }
 
   render () {
+    setTimeout(() => this.renderGraph(), 0)
     return (
       <div>
         <div id={ this.graphId }></div>

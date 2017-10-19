@@ -27,8 +27,7 @@ export default ([nodes, edges], { log, step } = defaultRunOptions) => {
 
   const node = (k, a) => {
     return {
-      desc: a,
-      name: a.name,
+      ...a,
       index: k,
       up: getAll(isDownStream(k))(edges),
       down: getAll(isUpStream(k))(edges),
@@ -54,18 +53,38 @@ export default ([nodes, edges], { log, step } = defaultRunOptions) => {
         const inputs = node.up.reduce((inputs, [{ node }, { port }]) => {
           return Object.assign(inputs, { [port]: nodes[node].value })
         }, {})
-        node.value = node.desc.implementation(node.desc.state, inputs)
-        log({ name: node.name, index: node.index, value: `${node.value}`, inputs: inputs, state: node.desc.state, next: node.down.map(([_, { node }]) => node) })
+        node.value = node.implementation(node.state, inputs)
+        log({ name: node.name, index: node.index, value: `${node.value}`, inputs: inputs, state: node.state, next: node.down.map(([_, { node }]) => node) })
         return next.concat(node.down.map(([_, { node }]) => node))
       }, []))
     ]
   }
 
-  let graph = [nodes, edges]
-  let iteration = startingNodes
-  while (iteration.length) {
-    [graph, iteration] = iterate(graph, iteration)
+  const listeners = []
+  const emit = (graph, iteration) => {
+    listeners.forEach(f => f(graph, iteration))
   }
 
-  return graph
+  let graph = [nodes, edges]
+  let iteration = startingNodes
+
+  const rate = 1000
+
+  const run = (graph, iteration) => {
+    setTimeout(() => {
+      [graph, iteration] = iterate(graph, iteration)
+      emit(graph, iteration)
+      if (iteration.length) run(graph, iteration)
+    }, rate)
+  }
+
+  emit(graph, iteration)
+  setTimeout(() => run(graph, iteration), rate)
+
+  return {
+    subscribe: f => {
+      listeners.push(f)
+      f(graph, iteration)
+    }
+  }
 }
